@@ -1,0 +1,942 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&amp;family=Inter:wght@400;500;600;700;800&amp;family=Caveat:wght@500;600&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0;overflow-x:hidden;-webkit-text-size-adjust:100%}
+*{box-sizing:border-box}
+a{color:#E2C4A6;text-decoration:none}
+a:hover{color:#F2E9DE}
+@keyframes pulseDot{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.35;transform:scale(.75)}}
+@keyframes shimmer{0%{background-position:-400px 0}100%{background-position:400px 0}}
+@keyframes travelDown{0%{top:-4px;opacity:0}12%{opacity:1}88%{opacity:1}100%{top:100%;opacity:0}}
+@keyframes expandIn{from{opacity:0;transform:translateY(-6px)}to{opacity:1;transform:translateY(0)}}
+@keyframes floatGlow{0%,100%{opacity:0.5}50%{opacity:1}}
+@keyframes fadeInOverlay{from{opacity:0}to{opacity:1}}
+@keyframes caret{0%,49%{opacity:1}50%,100%{opacity:0}}
+@media (prefers-reduced-motion: reduce){*{animation-duration:0.001ms!important;animation-iteration-count:1!important;transition-duration:0.001ms!important;scroll-behavior:auto!important}}
+input::placeholder,textarea::placeholder{color:#7A5F52}
+input:focus,textarea:focus{outline:1px solid #E2C4A6}
+html{scroll-behavior:smooth}
+</style>
+</helmet>
+<div style="position:fixed;top:0;left:0;right:0;height:44px;background:#2A3244;border-bottom:1px solid rgba(42,50,68,0.08);display:flex;align-items:center;justify-content:space-between;padding:0 20px;font-family:'JetBrains Mono',monospace;font-size:12px;color:#6B7794;z-index:50;gap:12px;overflow-x:auto;white-space:nowrap">
+  <div style="display:flex;gap:clamp(10px,3vw,20px)">
+    <span>SLOT <span style="color:#F2E9DE">{{ slotLabel }}</span></span>
+    <span>TPS <span style="color:#8FA0C7">{{ tpsLabel }}</span></span>
+    <span>BLOCKS <span style="color:#8FA0C7">{{ confirmedCount }}</span>/<span style="color:#8FA0C7">{{ totalBlocks }}</span></span>
+  </div>
+</div>
+<div style="position:fixed;bottom:0;top:auto;left:0;right:0;height:44px;background:#1C1310;border-top:1px solid rgba(143,160,199,0.12);border-bottom:none;display:flex;align-items:center;justify-content:center;gap:clamp(2px,1.5vw,8px);padding:0 clamp(14px,4vw,20px);z-index:49;overflow-x:auto;white-space:nowrap">
+  <sc-for list="{{ navItems }}" as="navItem" hint-placeholder-count="6">
+    <button onClick="{{ navItem.onClick }}" style="font-family:'JetBrains Mono',monospace;font-size:12.5px;font-weight:600;color:{{ navItem.color }};background:{{ navItem.bg }};border:none;border-radius:6px;padding:8px 13px;cursor:pointer;transition:all 0.2s ease;flex-shrink:0;min-height:36px" style-hover="color:#F2E9DE;background:rgba(143,160,199,0.14)">{{ navItem.label }}</button>
+  </sc-for>
+</div>
+<sc-if value="{{ networkOpen }}" hint-placeholder-val="{{ false }}">
+  <div onClick="{{ onToggleNetwork }}" style="position:fixed;inset:0;z-index:54;cursor:default"></div>
+  <div style="position:fixed;top:50px;left:20px;z-index:56;background:#170F0D;border:1px solid rgba(143,160,199,0.35);border-radius:10px;padding:14px 16px;font-family:'JetBrains Mono',monospace;font-size:12px;color:#D9C3B5;box-shadow:0 20px 50px -15px rgba(0,0,0,0.6);display:flex;flex-direction:column;gap:6px;min-width:220px">
+    <div style="color:#7A5F52;letter-spacing:1px;font-size:10.5px;margin-bottom:4px">NETWORK STATUS</div>
+    <div style="display:flex;justify-content:space-between;gap:10px">portfolio_node <span style="color:#8FA0C7">ONLINE ✓</span></div>
+    <div style="display:flex;justify-content:space-between;gap:10px">projects <span style="color:#8FA0C7">SYNCED ✓</span></div>
+    <div style="display:flex;justify-content:space-between;gap:10px">creative_assets <span style="color:#E2C4A6">OFF-CHAIN</span></div>
+    <div style="display:flex;justify-content:space-between;gap:10px">coffee <span style="color:#E2C4A6">CONFIRMED ✓</span></div>
+  </div>
+</sc-if>
+<sc-if value="{{ overlayVisible }}" hint-placeholder-val="{{ false }}">
+  <div onClick="{{ onOverlayClick }}" style="position:fixed;inset:0;background:rgba(10,12,18,0.72);backdrop-filter:blur(3px);z-index:55;animation:fadeInOverlay 0.25s ease-out;cursor:pointer"></div>
+</sc-if>
+<div style="min-height: 100vh; color: #F2E9DE; font-family: 'Inter',-apple-system,sans-serif; padding-top: 44px; padding-bottom: 44px; background-color: #170F0DEB">
+  <div style="max-width:1020px;margin:0 auto;padding:clamp(32px,7vw,56px) clamp(14px,4vw,20px) 100px">
+    <sc-if value="{{ mainView }}" hint-placeholder-val="{{ true }}">
+    <h1 style="font-family: 'JetBrains Mono',monospace; font-weight: 700; font-size: clamp(28px,5vw,42px); margin: 0 0 6px; color: #E2C4A6; letter-spacing: -0.5px">SIDDHI.CHAIN</h1>
+    <div style="font-family:'JetBrains Mono',monospace;font-size:13px;color:#7A5F52;margin-bottom:10px">&nbsp;a block explorer for one developer's brain — scroll to sync</div>
+    <div style="font-family:'Caveat',cursive;font-size:19px;color:#E2C4A6;margin:0 0 40px;transform:rotate(-1.1deg);padding-left:6px">every block below actually hashes the one above it. I checked. twice.</div>
+
+    <sc-for list="{{ blocks }}" as="block" hint-placeholder-count="8">
+      <sc-if value="{{ block.showConnector }}" hint-placeholder-val="{{ false }}">
+        <div style="display:flex;flex-direction:column;align-items:center;padding:6px 0 10px">
+          <div style="position:relative;width:2px;height:58px;background:#8FA0C7;opacity:{{ block.connectorOpacity }};animation:floatGlow 2.4s ease-in-out infinite;transition:opacity 0.25s ease">
+            <div style="position:absolute;left:50%;top:-4px;width:9px;height:9px;border-radius:50%;background:#8FA0C7;box-shadow:{{ block.connectorGlow }};transform:translateX(-50%);animation:travelDown 1.6s linear infinite"></div>
+          </div>
+          <div style="width:11px;height:11px;background:#8FA0C7;transform:rotate(45deg);margin:-6px 0;animation:pulseDot 2s ease-in-out infinite;box-shadow:{{ block.connectorGlow }};transition:box-shadow 0.25s ease"></div>
+          <div style="font-family:'JetBrains Mono',monospace;font-size:10px;color:#7A5F52;margin-top:6px">linked via {{ block.prevHashShort }}</div>
+        </div>
+      </sc-if>
+
+      <sc-if value="{{ block.pendingBlock }}" hint-placeholder-val="{{ false }}">
+        <div data-block-idx="{{ block.index }}" style="border:1px dashed rgba(42,50,68,0.1);border-radius:16px;padding:16px 22px;opacity:0.4;font-family:'JetBrains Mono',monospace;font-size:12px;color:#7A5F52;box-shadow:0 8px 24px -12px rgba(0,0,0,0.4)">{{ block.blockLabel }} · unmined — keep scrolling</div>
+      </sc-if>
+
+      <sc-if value="{{ block.showCard }}" hint-placeholder-val="{{ false }}">
+        <div data-screen-label="{{ block.blockLabel }}" data-chain-key="{{ block.key }}" onClick="{{ block.onFocusToggle }}" onMouseEnter="{{ block.onHoverIn }}" onMouseLeave="{{ block.onHoverOut }}" style="background: rgba(86,53,45,0.10); border: {{ block.cardBorder }}; border-radius: 16px; padding: clamp(28px,7vw,64px) clamp(18px,4.5vw,34px); cursor: pointer; position: relative; z-index: {{ block.cardZIndex }}; transition: transform 0.5s cubic-bezier(0.22,1,0.36,1),opacity 0.6s ease,box-shadow 0.5s ease,border-color 0.35s; opacity: {{ block.cardOpacity }}; transform: {{ block.cardTransform }}; box-shadow: {{ block.cardShadow }}; width: 100%; max-width: 995px; min-height: {{ block.cardHeight }}" style-hover="transform:translateY(-4px) scale(1.005);border-color:rgba(143,160,199,0.4);box-shadow:0 24px 60px -20px rgba(143,160,199,0.45),0 10px 26px -10px rgba(143,160,199,0.2)">
+          <div style="display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:12px;margin-bottom:24px">
+            <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+              <span style="font-family:'JetBrains Mono',monospace;font-size:11px;font-weight:700;color:#2A3244;background:#8FA0C7;padding:4px 10px;border-radius:6px">{{ block.blockLabel }}</span>
+              <span style="font-family:'JetBrains Mono',monospace;font-size:11px;font-weight:700;color:#F2E9DE;letter-spacing:1px;background:rgba(42,50,68,0.06);border:1px solid rgba(42,50,68,0.14);padding:4px 10px;border-radius:6px">{{ block.sectionLabel }}</span>
+              <sc-if value="{{ block.showPendingBadge }}" hint-placeholder-val="{{ false }}">
+                <span style="display:inline-flex;align-items:center;gap:6px;font-family:'JetBrains Mono',monospace;font-size:11px;color:#f0b429;background:rgba(240,180,41,0.1);border:1px solid rgba(240,180,41,0.35);padding:4px 10px;border-radius:20px">
+                  <span style="width:6px;height:6px;border-radius:50%;background:#f0b429;display:inline-block;animation:pulseDot 1.2s ease-in-out infinite"></span>
+                  UNCONFIRMED ON PURPOSE
+                </span>
+              </sc-if>
+            </div>
+            <div style="display:flex;align-items:center;gap:8px">
+              <span style="font-family:'JetBrains Mono',monospace;font-size:12px;color:#6B7794;background:rgba(42,50,68,0.05);border:1px solid rgba(42,50,68,0.1);padding:4px 8px;border-radius:6px">{{ block.hashShort }}</span>
+              <button onClick="{{ block.onCopy }}" style="font-family:'JetBrains Mono',monospace;font-size:11px;color:#8FA0C7;background:transparent;border:1px solid rgba(143,160,199,0.3);padding:8px 12px;border-radius:6px;cursor:pointer;transition:all 0.2s ease;min-height:36px" style-hover="background:rgba(143,160,199,0.12);border-color:#8FA0C7;transform:scale(1.05)">
+                <sc-if value="{{ block.justCopied }}" hint-placeholder-val="{{ false }}">Copied!</sc-if>
+                <sc-if value="{{ block.copyIdle }}" hint-placeholder-val="{{ true }}">Copy</sc-if>
+              </button>
+              <sc-if value="{{ block.showChevron }}" hint-placeholder-val="{{ true }}">
+                <button onClick="{{ block.onToggle }}" style="font-family:'JetBrains Mono',monospace;font-size:15px;color:#A78A7C;background:transparent;border:none;cursor:pointer;padding:8px 10px;min-height:36px;transition:transform 0.25s ease,color 0.2s ease;display:inline-block;transform:{{ block.chevronTransform }}" style-hover="color:#F2E9DE">
+                  ▸
+                </button>
+              </sc-if>
+            </div>
+          </div>
+
+          <sc-if value="{{ block.isMining }}" hint-placeholder-val="{{ false }}">
+            <div style="display:flex;flex-direction:column;gap:8px;padding:8px 0">
+              <div style="height:12px;border-radius:4px;background:linear-gradient(90deg,rgba(42,50,68,0.04) 25%,rgba(42,50,68,0.12) 37%,rgba(42,50,68,0.04) 63%);background-size:400px 100%;animation:shimmer 1.4s infinite linear;width:70%"></div>
+              <div style="height:12px;border-radius:4px;background:linear-gradient(90deg,rgba(42,50,68,0.04) 25%,rgba(42,50,68,0.12) 37%,rgba(42,50,68,0.04) 63%);background-size:400px 100%;animation:shimmer 1.4s infinite linear;width:90%"></div>
+              <div style="display:flex;justify-content:space-between;align-items:center;margin-top:6px;font-family:'JetBrains Mono',monospace;font-size:12px;flex-wrap:wrap;gap:8px">
+                <span style="color:#8FA0C7">grinding nonce {{ block.attemptCount }}</span>
+                <span style="color:#7A5F52">try: <span style="color:#8FA0C7">0x{{ block.attemptHash }}</span></span>
+              </div>
+            </div>
+          </sc-if>
+
+          <sc-if value="{{ block.isConfirmed }}" hint-placeholder-val="{{ false }}">
+
+            <sc-if value="{{ block.isGenesis }}" hint-placeholder-val="{{ false }}">
+              <div style="display:flex;gap:24px;flex-wrap:wrap">
+                <img src="./assets/image.jpg" alt="Siddhi Bansal" style="width:clamp(84px,22vw,120px);height:clamp(84px,22vw,120px);border-radius:50%;flex-shrink:0;object-fit:cover" />
+                <div style="flex:1;min-width:min(280px,100%)">
+                  <div style="font-size: clamp(26px,6vw,34px); font-weight: 700; color: #E2C4A6; letter-spacing:-0.5px">Siddhi Bansal</div>
+                  <div style="font-family:'JetBrains Mono',monospace;font-size:14px;color:#A78A7C;margin:6px 0 18px">building on solana · learning rust · awake before you</div>
+                  <p style="font-size:16px;line-height:1.75;color:#D9C3B5;margin:0 0 12px;max-width:620px;text-wrap:pretty">I started with web development, got curious about blockchains, and then made the questionable decision to find out what actually happens underneath all the abstractions.</p>
+                  <p style="font-size:16px;line-height:1.75;color:#D9C3B5;margin:0 0 22px;max-width:620px;text-wrap:pretty">Now I'm learning Rust, building on Solana, reading more docs than is strictly healthy, and figuring out why <em style="color:#F2E9DE;font-style:normal">this particular</em> transaction failed.</p>
+                  <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:2px 20px;font-family:'JetBrains Mono',monospace;font-size:12.5px;margin-bottom:22px;max-width:620px">
+                    <div style="display:flex;gap:8px;padding:3px 0"><span style="color:#7A5F52">identity:</span><span style="color:#F2E9DE">siddhi</span></div>
+                    <div style="display:flex;gap:8px;padding:3px 0"><span style="color:#7A5F52">chain:</span><span style="color:#8FA0C7">solana</span></div>
+                    <div style="display:flex;gap:8px;padding:3px 0"><span style="color:#7A5F52">current_language:</span><span style="color:#8FA0C7">rust</span></div>
+                    <div style="display:flex;gap:8px;padding:3px 0"><span style="color:#7A5F52">rare_trait:</span><span style="color:#E2C4A6">morning_person</span></div>
+                    <div style="display:flex;gap:8px;padding:3px 0"><span style="color:#7A5F52">peak_hours:</span><span style="color:#E2C4A6">06:00 — 11:00</span></div>
+                    <div style="display:flex;gap:8px;padding:3px 0"><span style="color:#7A5F52">fuel:</span><span style="color:#E2C4A6">coffee</span></div>
+                    <div style="display:flex;gap:8px;padding:3px 0"><span style="color:#7A5F52">coffee_status:</span><span style="color:#E2C4A6">confirmed ✓</span></div>
+                    <div style="display:flex;gap:8px;padding:3px 0"><span style="color:#7A5F52">consensus:</span><span style="color:#E2C4A6">curiosity</span></div>
+                    <div style="display:flex;gap:8px;padding:3px 0"><span style="color:#7A5F52">status:</span><span style="color:#8FA0C7">building</span></div>
+                  </div>
+                  <div style="display:flex;gap:10px;flex-wrap:wrap">
+                    <sc-for list="{{ block.socialsList }}" as="social" hint-placeholder-count="4">
+                      <a href="{{ social.url }}" style="font-family:'JetBrains Mono',monospace;font-size:13px;color:#F2E9DE;background:rgba(42,50,68,0.05);border:1px solid rgba(42,50,68,0.12);padding:9px 16px;border-radius:20px;transition:all 0.2s ease;display:inline-block;min-height:38px" style-hover="background:rgba(226,196,166,0.18);border-color:#E2C4A6;transform:translateY(-2px)">{{ social.label }}</a>
+                    </sc-for>
+                  </div>
+                </div>
+              </div>
+            </sc-if>
+
+            <sc-if value="{{ block.isJourney }}" hint-placeholder-val="{{ false }}">
+              <p style="font-size:16px;line-height:1.75;color:#D9C3B5;margin:0 0 26px;max-width:620px;text-wrap:pretty">Started by making things work in the browser. Stayed because apparently I needed to know what was happening underneath it.</p>
+              <div style="display:flex;flex-direction:column;gap:0;max-width:720px">
+                <div style="display:flex;gap:18px;align-items:flex-start">
+                  <div style="display:flex;flex-direction:column;align-items:center;flex-shrink:0;padding-top:5px"><span style="width:9px;height:9px;border-radius:50%;background:#8FA0C7;opacity:0.45"></span><span style="width:1px;flex:1;min-height:38px;background:linear-gradient(#8FA0C7,rgba(143,160,199,0.25))"></span></div>
+                  <div style="padding-bottom:20px"><div style="font-family:'JetBrains Mono',monospace;font-size:14px;color:#F2E9DE;font-weight:500">web development</div><div style="font-size:14.5px;color:#9C7F70;line-height:1.6;margin-top:3px">Made things move in the browser. Assumed that was the whole job.</div></div>
+                </div>
+                <div style="display:flex;gap:18px;align-items:flex-start">
+                  <div style="display:flex;flex-direction:column;align-items:center;flex-shrink:0;padding-top:5px"><span style="width:9px;height:9px;border-radius:50%;background:#8FA0C7;opacity:0.5"></span><span style="width:1px;flex:1;min-height:38px;background:linear-gradient(#8FA0C7,rgba(143,160,199,0.25))"></span></div>
+                  <div style="padding-bottom:20px"><div style="font-family:'JetBrains Mono',monospace;font-size:14px;color:#F2E9DE;font-weight:500">MERN</div><div style="font-size:14.5px;color:#9C7F70;line-height:1.6;margin-top:3px">Built enough CRUD apps that the CRUD stopped being the interesting part.</div></div>
+                </div>
+                <div style="display:flex;gap:18px;align-items:flex-start">
+                  <div style="display:flex;flex-direction:column;align-items:center;flex-shrink:0;padding-top:5px"><span style="width:9px;height:9px;border-radius:50%;background:#8FA0C7;opacity:0.6"></span><span style="width:1px;flex:1;min-height:38px;background:linear-gradient(#8FA0C7,rgba(143,160,199,0.25))"></span></div>
+                  <div style="padding-bottom:20px"><div style="font-family:'JetBrains Mono',monospace;font-size:14px;color:#F2E9DE;font-weight:500">TypeScript / Next.js</div><div style="font-size:14.5px;color:#9C7F70;line-height:1.6;margin-top:3px">Types turned out to be past-me leaving notes for future-me. I like both of them more now.</div></div>
+                </div>
+                <div style="display:flex;gap:18px;align-items:flex-start">
+                  <div style="display:flex;flex-direction:column;align-items:center;flex-shrink:0;padding-top:5px"><span style="width:9px;height:9px;border-radius:50%;background:#8FA0C7;opacity:0.72"></span><span style="width:1px;flex:1;min-height:38px;background:linear-gradient(#8FA0C7,rgba(143,160,199,0.25))"></span></div>
+                  <div style="padding-bottom:20px"><div style="font-family:'JetBrains Mono',monospace;font-size:14px;color:#F2E9DE;font-weight:500">blockchain</div><div style="font-size:14.5px;color:#9C7F70;line-height:1.6;margin-top:3px">Opened one whitepaper out of curiosity. Structurally, this is where the portfolio comes from.</div></div>
+                </div>
+                <div style="display:flex;gap:18px;align-items:flex-start">
+                  <div style="display:flex;flex-direction:column;align-items:center;flex-shrink:0;padding-top:5px"><span style="width:9px;height:9px;border-radius:50%;background:#8FA0C7;opacity:0.84"></span><span style="width:1px;flex:1;min-height:38px;background:linear-gradient(#8FA0C7,rgba(143,160,199,0.25))"></span></div>
+                  <div style="padding-bottom:20px"><div style="font-family:'JetBrains Mono',monospace;font-size:14px;color:#F2E9DE;font-weight:500">Ethereum / Solidity</div><div style="font-size:14.5px;color:#9C7F70;line-height:1.6;margin-top:3px">Learned what gas is. Learned what a revert is. Learned to read stack traces properly.</div></div>
+                </div>
+                <div style="display:flex;gap:18px;align-items:flex-start">
+                  <div style="display:flex;flex-direction:column;align-items:center;flex-shrink:0;padding-top:5px"><span style="width:9px;height:9px;border-radius:50%;background:#8FA0C7"></span><span style="width:1px;flex:1;min-height:38px;background:linear-gradient(#8FA0C7,rgba(143,160,199,0.25))"></span></div>
+                  <div style="padding-bottom:20px"><div style="font-family:'JetBrains Mono',monospace;font-size:14px;color:#F2E9DE;font-weight:500">Solana</div><div style="font-size:14.5px;color:#9C7F70;line-height:1.6;margin-top:3px">Accounts instead of contracts, rent instead of gas. Fast enough that my mistakes arrive immediately.</div></div>
+                </div>
+                <div style="display:flex;gap:18px;align-items:flex-start">
+                  <div style="display:flex;flex-direction:column;align-items:center;flex-shrink:0;padding-top:5px"><span style="width:9px;height:9px;border-radius:50%;background:#8FA0C7;box-shadow:0 0 10px 2px rgba(143,160,199,0.6)"></span><span style="width:1px;flex:1;min-height:30px;background:linear-gradient(rgba(143,160,199,0.5),transparent)"></span></div>
+                  <div style="padding-bottom:14px"><div style="font-family:'JetBrains Mono',monospace;font-size:14px;color:#8FA0C7;font-weight:600">Rust — currently here</div><div style="font-size:14.5px;color:#9C7F70;line-height:1.6;margin-top:3px">Somewhere between learning Rust and negotiating with the borrow checker. It's still winning, but by less than last month.</div></div>
+                </div>
+              </div>
+              <div style="display:flex;gap:18px;flex-wrap:wrap;font-family:'JetBrains Mono',monospace;font-size:12.5px;margin-top:14px;padding-top:16px;border-top:1px solid rgba(42,50,68,0.07)">
+                <span><span style="color:#7A5F52">first_block:</span> <span style="color:#F2E9DE">web</span></span>
+                <span><span style="color:#7A5F52">current_block:</span> <span style="color:#8FA0C7">solana</span></span>
+                <span><span style="color:#7A5F52">next_block:</span> <span style="color:#F2E9DE">???</span></span>
+              </div>
+            </sc-if>
+
+            <sc-if value="{{ block.isSkills }}" hint-placeholder-val="{{ false }}">
+              <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:30px 34px">
+                <div>
+                  <div style="font-family:'JetBrains Mono',monospace;font-size:11px;letter-spacing:1.2px;color:#8FA0C7;font-weight:700;margin-bottom:14px">CURRENTLY BUILDING WITH</div>
+                  <div style="display:flex;gap:8px;flex-wrap:wrap">
+                    <span style="font-family:'JetBrains Mono',monospace;font-size:14px;color:#F2E9DE;background:rgba(143,160,199,0.16);border:1px solid rgba(143,160,199,0.5);padding:7px 15px;border-radius:6px;transition:all 0.2s ease" style-hover="background:rgba(143,160,199,0.3);transform:translateY(-2px)">Solana</span>
+                    <span style="font-family:'JetBrains Mono',monospace;font-size:14px;color:#F2E9DE;background:rgba(143,160,199,0.16);border:1px solid rgba(143,160,199,0.5);padding:7px 15px;border-radius:6px;transition:all 0.2s ease" style-hover="background:rgba(143,160,199,0.3);transform:translateY(-2px)">Rust</span>
+                    <span style="font-family:'JetBrains Mono',monospace;font-size:14px;color:#F2E9DE;background:rgba(143,160,199,0.16);border:1px solid rgba(143,160,199,0.5);padding:7px 15px;border-radius:6px;transition:all 0.2s ease" style-hover="background:rgba(143,160,199,0.3);transform:translateY(-2px)">Anchor</span>
+                    <span style="font-family:'JetBrains Mono',monospace;font-size:14px;color:#F2E9DE;background:rgba(143,160,199,0.16);border:1px solid rgba(143,160,199,0.5);padding:7px 15px;border-radius:6px;transition:all 0.2s ease" style-hover="background:rgba(143,160,199,0.3);transform:translateY(-2px)">TypeScript</span>
+                  </div>
+                </div>
+                <div>
+                  <div style="font-family:'JetBrains Mono',monospace;font-size:11px;letter-spacing:1.2px;color:#A78A7C;font-weight:700;margin-bottom:14px">VERY COMFORTABLE WITH</div>
+                  <div style="display:flex;gap:8px;flex-wrap:wrap">
+                    <span style="font-family:'JetBrains Mono',monospace;font-size:14px;color:#D9C3B5;background:rgba(86,53,45,0.22);border:1px solid rgba(86,53,45,0.55);padding:7px 15px;border-radius:6px;transition:all 0.2s ease" style-hover="border-color:#56352D;background:rgba(86,53,45,0.4);transform:translateY(-2px)">React</span>
+                    <span style="font-family:'JetBrains Mono',monospace;font-size:14px;color:#D9C3B5;background:rgba(86,53,45,0.22);border:1px solid rgba(86,53,45,0.55);padding:7px 15px;border-radius:6px;transition:all 0.2s ease" style-hover="border-color:#56352D;background:rgba(86,53,45,0.4);transform:translateY(-2px)">Next.js</span>
+                    <span style="font-family:'JetBrains Mono',monospace;font-size:14px;color:#D9C3B5;background:rgba(86,53,45,0.22);border:1px solid rgba(86,53,45,0.55);padding:7px 15px;border-radius:6px;transition:all 0.2s ease" style-hover="border-color:#56352D;background:rgba(86,53,45,0.4);transform:translateY(-2px)">Node.js</span>
+                    <span style="font-family:'JetBrains Mono',monospace;font-size:14px;color:#D9C3B5;background:rgba(86,53,45,0.22);border:1px solid rgba(86,53,45,0.55);padding:7px 15px;border-radius:6px;transition:all 0.2s ease" style-hover="border-color:#56352D;background:rgba(86,53,45,0.4);transform:translateY(-2px)">Express</span>
+                    <span style="font-family:'JetBrains Mono',monospace;font-size:14px;color:#D9C3B5;background:rgba(86,53,45,0.22);border:1px solid rgba(86,53,45,0.55);padding:7px 15px;border-radius:6px;transition:all 0.2s ease" style-hover="border-color:#56352D;background:rgba(86,53,45,0.4);transform:translateY(-2px)">MongoDB</span>
+                    <span style="font-family:'JetBrains Mono',monospace;font-size:14px;color:#D9C3B5;background:rgba(86,53,45,0.22);border:1px solid rgba(86,53,45,0.55);padding:7px 15px;border-radius:6px;transition:all 0.2s ease" style-hover="border-color:#56352D;background:rgba(86,53,45,0.4);transform:translateY(-2px)">MySQL</span>
+                  </div>
+                </div>
+                <div>
+                  <div style="font-family:'JetBrains Mono',monospace;font-size:11px;letter-spacing:1.2px;color:#7A5F52;font-weight:700;margin-bottom:14px">THINGS I'VE SURVIVED</div>
+                  <div style="display:flex;flex-direction:column;gap:7px;font-family:'JetBrains Mono',monospace;font-size:13.5px;color:#9C7F70;line-height:1.5">
+                    <span>— MERN, start to finish</span>
+                    <span>— Solidity, and its opinions</span>
+                    <span>— web3 tooling that changed under me</span>
+                    <span>— deployment bugs that only exist in production</span>
+                    <span>— CORS. all of it.</span>
+                    <span style="color:#A78A7C">— env vars that worked locally and absolutely refused to work on Vercel</span>
+                  </div>
+                </div>
+              </div>
+              <div style="display:flex;gap:18px;flex-wrap:wrap;font-family:'JetBrains Mono',monospace;font-size:12.5px;margin-top:28px;padding-top:16px;border-top:1px solid rgba(42,50,68,0.07)">
+                <span><span style="color:#7A5F52">learning:</span> <span style="color:#8FA0C7">rust</span></span>
+                <span><span style="color:#7A5F52">obsessing_over:</span> <span style="color:#8FA0C7">solana internals</span></span>
+                <span><span style="color:#7A5F52">debugging_method:</span> <span style="color:#8FA0C7">logs + stubbornness</span></span>
+                <span><span style="color:#7A5F52">peak_productivity:</span> <span style="color:#E2C4A6">06:00</span></span>
+              </div>
+            </sc-if>
+
+            <sc-if value="{{ block.isGateway }}" hint-placeholder-val="{{ false }}">
+              <p style="font-size:16px;line-height:1.7;color:#D9C3B5;margin:0 0 6px;max-width:480px;text-wrap:pretty">Things I've built while figuring things out.</p>
+              <div style="font-family:'JetBrains Mono',monospace;font-size:12.5px;color:#7A5F52;margin-bottom:22px">03 artifacts</div>
+              <button onClick="{{ onEnterProjectsClick }}" style="font-family:'JetBrains Mono',monospace;font-size:13px;font-weight:600;color:#2A3244;background:#8FA0C7;padding:11px 20px;border-radius:6px;border:none;cursor:pointer;min-height:40px;transition:transform 0.2s ease,box-shadow 0.2s ease" style-hover="transform:translateY(-2px) scale(1.03);box-shadow:0 8px 20px -6px rgba(143,160,199,0.5)">EXPLORE PROJECTS →</button>
+            </sc-if>
+
+            <sc-if value="{{ block.isCurrent }}" hint-placeholder-val="{{ false }}">
+              <div>
+                <p style="font-size:16px;line-height:1.75;color:#D9C3B5;margin:0 0 22px;max-width:560px;text-wrap:pretty">What's actually on my screen right now, rather than what sounds good on a résumé.</p>
+                <div style="display:flex;flex-direction:column;gap:11px;font-size:15.5px;color:#F2E9DE;line-height:1.55">
+                  <div style="display:flex;gap:11px"><span style="color:#E2C4A6;font-family:'JetBrains Mono',monospace">→</span><span>Learning Rust properly - not tutorial-properly</span></div>
+                  <div style="display:flex;gap:11px"><span style="color:#E2C4A6;font-family:'JetBrains Mono',monospace">→</span><span>Building on Solana, mostly with Anchor</span></div>
+                  <div style="display:flex;gap:11px"><span style="color:#E2C4A6;font-family:'JetBrains Mono',monospace">→</span><span>Reading Solana internals: accounts, rent, CPI, the runtime</span></div>
+                  <div style="display:flex;gap:11px"><span style="color:#E2C4A6;font-family:'JetBrains Mono',monospace">→</span><span>Poking at blockchain infrastructure to see where the edges are</span></div>
+                  <div style="display:flex;gap:11px"><span style="color:#E2C4A6;font-family:'JetBrains Mono',monospace">→</span><span>Looking for people building something interesting, to build it with them</span></div>
+                  <div style="display:flex;gap:11px"><span style="color:#E2C4A6;font-family:'JetBrains Mono',monospace">→</span><span>Running on an amount of coffee that would concern a doctor&nbsp;</span></div>
+                </div>
+                <div style="display:flex;gap:18px;flex-wrap:wrap;font-family:'JetBrains Mono',monospace;font-size:12.5px;margin-top:26px;padding-top:16px;border-top:1px solid rgba(42,50,68,0.07)">
+                  <span><span style="color:#7A5F52">next_block:</span> <span style="color:#E2C4A6">experience</span></span>
+                  <span><span style="color:#7A5F52">2AM_commits:</span> <span style="color:#F2E9DE">suspicious</span></span>
+                </div>
+              </div>
+            </sc-if>
+
+            <sc-if value="{{ block.isOffchain }}" hint-placeholder-val="{{ false }}">
+              <p style="font-size:15px;line-height:1.7;color:#D9C3B5;margin:0 0 22px;max-width:480px;text-wrap:pretty">Not everything gets committed to GitHub.</p>
+              <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:14px">
+                <sc-for list="{{ block.offchainCards }}" as="card" hint-placeholder-count="3">
+                  <div onClick="{{ card.onToggle }}" style="border:1px solid rgba(86,53,45,0.45);border-radius:10px;padding:16px;cursor:pointer;background:rgba(86,53,45,0.12);transition:all 0.2s ease;min-height:96px" style-hover="border-color:#E2C4A6;background:rgba(86,53,45,0.22)">
+                    <div style="font-family:'JetBrains Mono',monospace;font-size:11px;color:#7A5F52;margin-bottom:6px">{{ card.num }}</div>
+                    <div style="font-size:16px;font-weight:700;color:#E2C4A6;margin-bottom:8px">{{ card.title }}</div>
+                    <sc-if value="{{ card.open }}" hint-placeholder-val="{{ false }}">
+                      <div style="font-family:'Caveat',cursive;font-size:16px;color:#D9C3B5;line-height:1.4">{{ card.tagline }}</div>
+                    </sc-if>
+                    <sc-if value="{{ card.closed }}" hint-placeholder-val="{{ true }}">
+                      <div style="font-family:'JetBrains Mono',monospace;font-size:11px;color:#8C7A6C">[ explore ]</div>
+                    </sc-if>
+                  </div>
+                </sc-for>
+              </div>
+            </sc-if>
+
+            <sc-if value="{{ block.isContact }}" hint-placeholder-val="{{ false }}">
+              <div style="font-family:'JetBrains Mono',monospace;font-size:15px;color:#8FA0C7;margin-bottom:18px">open_connection();</div>
+              <form onSubmit="{{ onSubmitContact }}" onClick="{{ block.onFormClick }}" style="display:flex;flex-direction:column;gap:14px;max-width:460px">
+                <input value="{{ formName }}" onChange="{{ onNameChange }}" placeholder="Name" style="font-family:'Inter',sans-serif;font-size:16px;background:rgba(42,50,68,0.04);border:1px solid rgba(42,50,68,0.12);border-radius:8px;padding:14px 16px;color:#F2E9DE">
+                <input value="{{ formEmail }}" onChange="{{ onEmailChange }}" placeholder="Email" style="font-family:'Inter',sans-serif;font-size:16px;background:rgba(42,50,68,0.04);border:1px solid rgba(42,50,68,0.12);border-radius:8px;padding:14px 16px;color:#F2E9DE">
+                <textarea value="{{ formMessage }}" onChange="{{ onMessageChange }}" placeholder="What are you building?" rows="4" style="font-family:'Inter',sans-serif;font-size:16px;background:rgba(42,50,68,0.04);border:1px solid rgba(42,50,68,0.12);border-radius:8px;padding:14px 16px;color:#F2E9DE;resize:vertical"></textarea>
+                <button type="submit" style="font-family:'JetBrains Mono',monospace;font-size:15px;font-weight:600;color:#2A3244;background:#E2C4A6;border:none;border-radius:8px;padding:15px;cursor:pointer;transition:transform 0.2s ease,box-shadow 0.2s ease" style-hover="transform:translateY(-2px);box-shadow:0 10px 24px -8px rgba(226,196,166,0.5)">
+                  <sc-if value="{{ formStatusConfirming }}" hint-placeholder-val="{{ false }}">Confirming…</sc-if>
+                  <sc-if value="{{ formStatusConfirmed }}" hint-placeholder-val="{{ false }}">TRANSACTION CONFIRMED ✓</sc-if>
+                  <sc-if value="{{ formStatusIdle }}" hint-placeholder-val="{{ true }}">SIGN &amp; SEND TRANSACTION →</sc-if>
+                </button>
+              </form>
+              <div style="display:flex;gap:16px;flex-wrap:wrap;font-family:'JetBrains Mono',monospace;font-size:13px;margin-top:18px">
+                <a href="https://github.com/sbansal05" target="_blank" rel="noopener">GitHub</a><a href="https://x.com/sbansal05" target="_blank" rel="noopener">X</a><a href="https://www.linkedin.com/in/siddhi-bansal-081891246/" target="_blank" rel="noopener">LinkedIn</a><a href="mailto:sbsiddhi05@gmail.com">sbsiddhi05@gmail.com</a>
+              </div>
+            </sc-if>
+          </sc-if>
+
+          <sc-if value="{{ block.expanded }}" hint-placeholder-val="{{ false }}">
+            <div style="margin-top:20px;padding-top:16px;border-top:1px solid rgba(42,50,68,0.08);animation:expandIn 0.3s ease-out">
+              <div style="font-family:'JetBrains Mono',monospace;font-size:10.5px;letter-spacing:1.4px;color:#7A5F52;margin-bottom:10px">BLOCK INSPECTOR</div>
+              <div style="display:flex;flex-direction:column;gap:5px;font-family:'JetBrains Mono',monospace;font-size:12px;color:#A78A7C;overflow-wrap:anywhere">
+                <div>block_height <span style="color:#F2E9DE">{{ block.blockLabel }}</span></div>
+                <div>timestamp <span style="color:#F2E9DE">{{ block.minedAt }}</span></div>
+                <div>nonce <span style="color:#8FA0C7">{{ block.inspectorNonce }}</span></div>
+                <div>previous_hash <span style="color:#8FA0C7">{{ block.prevHashShort }}</span></div>
+                <div>current_hash <span style="color:#8FA0C7">{{ block.inspectorHash }}</span></div>
+                <div>confirmations <span style="color:#F2E9DE">{{ block.confirmations }}</span></div>
+                <div>status <span style="color:#E2C4A6">CONFIRMED ✓</span></div>
+              </div>
+              <sc-if value="{{ block.reMineActive }}" hint-placeholder-val="{{ false }}">
+                <div style="margin-top:12px;font-family:'JetBrains Mono',monospace;font-size:11.5px;color:#7A5F52;display:flex;flex-direction:column;gap:2px">
+                  <sc-for list="{{ block.reMineTries }}" as="try" hint-placeholder-count="2">
+                    <div>trying nonce {{ try.nonce }}… <span style="color:#8FA0C7">0x{{ try.hash }}</span></div>
+                  </sc-for>
+                </div>
+              </sc-if>
+              <sc-if value="{{ block.reMineDone }}" hint-placeholder-val="{{ false }}">
+                <div style="margin-top:12px;font-family:'JetBrains Mono',monospace;font-size:11.5px;color:#8FA0C7">✓ valid hash found</div>
+              </sc-if>
+              <button onClick="{{ block.onReMine }}" style="margin-top:14px;font-family:'JetBrains Mono',monospace;font-size:11px;font-weight:600;color:#8FA0C7;background:transparent;border:1px solid rgba(143,160,199,0.4);padding:8px 14px;border-radius:6px;cursor:pointer;min-height:36px;transition:all 0.2s ease" style-hover="background:rgba(143,160,199,0.12);border-color:#8FA0C7">
+                <sc-if value="{{ block.reMineActive }}" hint-placeholder-val="{{ false }}">MINING…</sc-if>
+                <sc-if value="{{ block.reMineIdle }}" hint-placeholder-val="{{ true }}">[ RE-MINE BLOCK ]</sc-if>
+              </button>
+            </div>
+          </sc-if>
+        </div>
+      </sc-if>
+    </sc-for>
+
+    <sc-if value="{{ showLiveMining }}" hint-placeholder-val="{{ false }}">
+      <div style="display:flex;flex-direction:column;align-items:center;padding:6px 0 10px">
+        <div style="position:relative;width:2px;height:58px;background:#8FA0C7;opacity:0.35">
+          <div style="position:absolute;left:50%;top:-4px;width:9px;height:9px;border-radius:50%;background:#8FA0C7;box-shadow:0 0 10px 2px rgba(143,160,199,0.8);transform:translateX(-50%);animation:travelDown 1.6s linear infinite"></div>
+        </div>
+      </div>
+      <div style="border:1px dashed rgba(143,160,199,0.4);border-radius:16px;padding:18px 22px;background:rgba(143,160,199,0.03)">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;flex-wrap:wrap;gap:8px">
+          <span style="font-family:'JetBrains Mono',monospace;font-size:11px;font-weight:700;color:#F2E9DE;background:rgba(42,50,68,0.06);padding:4px 10px;border-radius:6px">BLOCK #{{ liveBlockLabel }}</span>
+          <span style="display:inline-flex;align-items:center;gap:6px;font-family:'JetBrains Mono',monospace;font-size:11px;color:#8FA0C7">
+            <span style="width:6px;height:6px;border-radius:50%;background:#8FA0C7;display:inline-block;animation:pulseDot 0.9s ease-in-out infinite"></span>
+            NOT WRITTEN YET
+          </span>
+        </div>
+        <div style="height:10px;border-radius:4px;background:linear-gradient(90deg,rgba(42,50,68,0.04) 25%,rgba(42,50,68,0.14) 37%,rgba(42,50,68,0.04) 63%);background-size:400px 100%;animation:shimmer 1s infinite linear;width:100%;margin-bottom:10px"></div>
+        <div style="display:flex;justify-content:space-between;font-family:'JetBrains Mono',monospace;font-size:12px;gap:10px;flex-wrap:wrap">
+          <span style="color:#7A5F52">nonce <span style="color:#F2E9DE">{{ liveAttemptCount }}</span></span>
+          <span style="color:#7A5F52">0x<span style="color:#8FA0C7">{{ liveAttemptHash }}</span></span>
+        </div>
+      </div>
+    </sc-if>
+
+    <sc-if value="{{ terminalOn }}" hint-placeholder-val="{{ true }}">
+      <div style="margin-top:56px">
+        <div style="font-family:'Caveat',cursive;font-size:19px;color:#E2C4A6;margin-bottom:8px;transform:rotate(-0.7deg);padding-left:4px">you found the terminal. try a command.</div>
+        <div style="border:1px solid rgba(42,50,68,0.12);border-radius:12px;background:rgba(0,0,0,0.5);overflow:hidden">
+          <div style="display:flex;align-items:center;gap:8px;padding:11px 16px;background:rgba(42,50,68,0.04);border-bottom:1px solid rgba(42,50,68,0.08);font-family:'JetBrains Mono',monospace;font-size:11px;color:#7A5F52">
+            <span style="width:8px;height:8px;border-radius:50%;background:#8FA0C7;display:inline-block"></span>
+            siddhi@solana — zsh
+          </div>
+          <div style="padding:18px 16px;font-family:'JetBrains Mono',monospace;font-size:13.5px;line-height:1.75;display:flex;flex-direction:column;gap:2px;min-height:150px">
+            <sc-for list="{{ termLines }}" as="line" hint-placeholder-count="2">
+              <div style="display:flex;gap:8px;overflow-wrap:anywhere">
+                <span style="color:#8FA0C7;flex-shrink:0">{{ line.prefix }}</span>
+                <span style="color:{{ line.color }}">{{ line.text }}</span>
+              </div>
+            </sc-for>
+          </div>
+          <form onSubmit="{{ onTerminalSubmit }}" style="display:flex;align-items:center;gap:8px;padding:4px 16px 16px">
+            <span style="color:#8FA0C7">~ $</span>
+            <input value="{{ termInput }}" onChange="{{ onTermInputChange }}" placeholder="try 'help'" style="flex:1;background:transparent;border:none;outline:none;color:#F2E9DE;font-family:'JetBrains Mono',monospace;font-size:13.5px;min-height:24px">
+          </form>
+        </div>
+      </div>
+    </sc-if>
+
+    <div style="margin-top:48px;text-align:center">
+      <div style="font-family:'JetBrains Mono',monospace;font-size:13px;color:#8FA0C7;letter-spacing:0.5px;margin-bottom:8px">ALL BLOCKS VERIFIED ✓</div>
+      <div style="font-size:15px;color:#D9C3B5;margin-bottom:20px">You've reached the end of the chain. Thanks for exploring.</div>
+      <div style="display:flex;gap:12px;justify-content:center;flex-wrap:wrap">
+        <button onClick="{{ onReturnGenesis }}" style="font-family:'JetBrains Mono',monospace;font-size:13px;font-weight:600;color:#2A3244;background:#E2C4A6;border:none;padding:11px 20px;border-radius:6px;cursor:pointer;min-height:38px;transition:transform 0.2s ease" style-hover="transform:translateY(-2px)">RETURN TO GENESIS</button>
+        <button onClick="{{ onRandomBlock }}" style="font-family:'JetBrains Mono',monospace;font-size:13px;font-weight:600;color:#8FA0C7;background:transparent;border:1px solid rgba(143,160,199,0.4);padding:11px 20px;border-radius:6px;cursor:pointer;min-height:38px;transition:all 0.2s ease" style-hover="background:rgba(143,160,199,0.12);border-color:#8FA0C7">⟳ QUERY RANDOM BLOCK</button>
+      </div>
+      <div style="font-family:'JetBrains Mono',monospace;font-size:10.5px;color:#7A5F52;margin-top:16px">press <span style="color:#8FA0C7">⌘K</span> / <span style="color:#8FA0C7">Ctrl+K</span> anytime to jump around the chain</div>
+    </div>
+    <sc-if value="{{ paletteOpen }}" hint-placeholder-val="{{ false }}">
+      <div onClick="{{ onPaletteClose }}" style="position:fixed;inset:0;z-index:80;background:rgba(10,12,18,0.75);backdrop-filter:blur(3px);display:flex;align-items:flex-start;justify-content:center;padding-top:14vh">
+        <div onClick="{{ stopPropClick }}" style="width:100%;max-width:480px;margin:0 20px;background:#170F0D;border:1px solid rgba(143,160,199,0.35);border-radius:12px;overflow:hidden;box-shadow:0 30px 80px -20px rgba(0,0,0,0.7)">
+          <div style="padding:14px 16px;border-bottom:1px solid rgba(42,50,68,0.5);font-family:'JetBrains Mono',monospace;font-size:11px;color:#7A5F52;letter-spacing:1px">SEARCH THE CHAIN…</div>
+          <div style="max-height:340px;overflow-y:auto">
+            <sc-for list="{{ paletteItems }}" as="item" hint-placeholder-count="6">
+              <div onClick="{{ item.onSelect }}" style="padding:12px 16px;cursor:pointer;font-family:'JetBrains Mono',monospace;font-size:14px;color:{{ item.color }};background:{{ item.bg }};display:flex;gap:10px;transition:background 0.15s ease">
+                <span style="color:#8FA0C7">→</span>{{ item.label }}
+              </div>
+            </sc-for>
+          </div>
+          <div style="padding:8px 16px;border-top:1px solid rgba(42,50,68,0.5);font-family:'JetBrains Mono',monospace;font-size:10px;color:#7A5F52">↑↓ navigate · enter select · esc close</div>
+        </div>
+      </div>
+    </sc-if>
+    </sc-if>
+
+    <sc-if value="{{ projectsView }}" hint-placeholder-val="{{ false }}">
+      <div style="animation:fadeInOverlay 0.3s ease-out">
+        <button onClick="{{ onReturnMain }}" style="font-family:'JetBrains Mono',monospace;font-size:13px;color:#8FA0C7;background:transparent;border:none;cursor:pointer;padding:8px 0;margin-bottom:26px;display:inline-flex;align-items:center;gap:6px;min-height:36px;transition:color 0.2s ease" style-hover="color:#F2E9DE">← MAIN CHAIN</button>
+        <h1 style="font-family:'JetBrains Mono',monospace;font-weight:700;font-size:clamp(26px,5vw,38px);margin:0 0 8px;color:#E2C4A6;letter-spacing:-0.5px">PROJECTS CHAIN</h1>
+        <div style="font-family:'JetBrains Mono',monospace;font-size:13px;color:#7A5F52;margin-bottom:44px">05 blocks · 05 artifacts</div>
+
+        <sc-for list="{{ projectBlocks }}" as="pb" hint-placeholder-count="3">
+          <sc-if value="{{ pb.showConnector }}" hint-placeholder-val="{{ false }}">
+            <div style="display:flex;flex-direction:column;align-items:center;padding:6px 0 10px">
+              <div style="position:relative;width:2px;height:58px;background:#8FA0C7;opacity:0.5">
+                <div style="position:absolute;left:50%;top:-4px;width:9px;height:9px;border-radius:50%;background:#8FA0C7;box-shadow:0 0 10px 2px rgba(143,160,199,0.8);transform:translateX(-50%);animation:travelDown 1.6s linear infinite"></div>
+              </div>
+              <div style="width:11px;height:11px;background:#8FA0C7;transform:rotate(45deg);margin:-6px 0;animation:pulseDot 2s ease-in-out infinite"></div>
+            </div>
+          </sc-if>
+          <div style="background:rgba(86,53,45,0.10);border:1px solid rgba(86,53,45,0.4);border-radius:16px;padding:clamp(28px,7vw,56px) clamp(18px,4.5vw,34px);width:100%;max-width:995px">
+            <div style="display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:12px;margin-bottom:22px">
+              <span style="font-family:'JetBrains Mono',monospace;font-size:11px;font-weight:700;color:#2A3244;background:#8FA0C7;padding:4px 10px;border-radius:6px">{{ pb.blockLabel }}</span>
+              <div style="display:flex;align-items:center;gap:8px">
+                <span style="font-family:'JetBrains Mono',monospace;font-size:12px;color:#6B7794;background:rgba(42,50,68,0.05);border:1px solid rgba(42,50,68,0.1);padding:4px 8px;border-radius:6px">{{ pb.hashShort }}</span>
+                <button onClick="{{ pb.onCopy }}" style="font-family:'JetBrains Mono',monospace;font-size:11px;color:#8FA0C7;background:transparent;border:1px solid rgba(143,160,199,0.3);padding:8px 12px;border-radius:6px;cursor:pointer;min-height:36px" style-hover="background:rgba(143,160,199,0.12);border-color:#8FA0C7">
+                  <sc-if value="{{ pb.justCopied }}" hint-placeholder-val="{{ false }}">Copied!</sc-if>
+                  <sc-if value="{{ pb.copyIdle }}" hint-placeholder-val="{{ true }}">Copy</sc-if>
+                </button>
+              </div>
+            </div>
+
+            <div style="display:flex;align-items:baseline;gap:14px;margin-bottom:18px">
+              <span style="font-family:'JetBrains Mono',monospace;font-size:13px;color:#7A5F52;letter-spacing:1px">{{ pb.projectNumber }}</span>
+              <div style="font-size:23px;font-weight:700;color:#8FA0C7;letter-spacing:-0.3px">{{ pb.project.title }}</div>
+            </div>
+            <sc-if value="{{ pb.project.screenshot }}" hint-placeholder-val="{{ false }}">
+              <img src="{{ pb.project.screenshot }}" alt="{{ pb.project.title }} screenshot" style="width:100%;max-width:520px;aspect-ratio:{{ pb.project.screenshotRatio }};border-radius:10px;object-fit:cover;object-position:center;background:#0F0A08;margin-bottom:20px;transition:transform 0.3s ease;display:block;border:1px solid rgba(143,160,199,0.15)" style-hover="transform:scale(1.02)" />
+            </sc-if>
+
+            <p style="font-size:16px;line-height:1.7;color:#D9C3B5;margin:0 0 18px;max-width:560px;text-wrap:pretty">{{ pb.project.description }}</p>
+            <div style="display:flex;gap:20px;flex-wrap:wrap;font-family:'JetBrains Mono',monospace;font-size:12.5px;color:#7A5F52;margin-bottom:16px">
+              <span>status: <span style="color:#E2C4A6">{{ pb.project.status }}</span></span>
+              <span>chain: <span style="color:#8FA0C7">{{ pb.project.chain }}</span></span>
+            </div>
+            <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:24px">
+              <sc-for list="{{ pb.project.tech }}" as="tech" hint-placeholder-count="4">
+                <span style="font-family:'JetBrains Mono',monospace;font-size:12px;color:#8FA0C7;background:rgba(143,160,199,0.08);border:1px solid rgba(143,160,199,0.25);padding:4px 11px;border-radius:5px">{{ tech }}</span>
+              </sc-for>
+            </div>
+            <button onClick="{{ pb.onToggle }}" style="font-family:'JetBrains Mono',monospace;font-size:13px;font-weight:600;color:#8FA0C7;background:transparent;border:1px solid rgba(143,160,199,0.4);padding:10px 18px;border-radius:6px;cursor:pointer;min-height:40px;transition:all 0.2s ease" style-hover="background:rgba(143,160,199,0.12);border-color:#8FA0C7;transform:translateY(-2px)">
+              <sc-if value="{{ pb.expanded }}" hint-placeholder-val="{{ false }}">↑ COLLAPSE</sc-if>
+              <sc-if value="{{ pb.collapsed }}" hint-placeholder-val="{{ true }}">EXPLORE DETAILS →</sc-if>
+            </button>
+            <sc-if value="{{ pb.expanded }}" hint-placeholder-val="{{ false }}">
+              <div style="margin-top:26px;padding-top:22px;border-top:1px solid rgba(42,50,68,0.08);animation:expandIn 0.3s ease-out;max-width:620px">
+                <div style="font-family:'JetBrains Mono',monospace;font-size:10.5px;letter-spacing:1.2px;color:#7A5F52;margin-bottom:6px">WHY I BUILT IT</div>
+                <p style="font-size:15.5px;line-height:1.7;color:#F2E9DE;margin:0 0 18px;text-wrap:pretty">{{ pb.project.why }}</p>
+                <sc-if value="{{ pb.hasWhatBroke }}" hint-placeholder-val="{{ false }}">
+                  <div style="font-family:'JetBrains Mono',monospace;font-size:10.5px;letter-spacing:1.2px;color:#7A5F52;margin-bottom:6px">WHAT BROKE</div>
+                  <p style="font-size:15.5px;line-height:1.7;color:#D9C3B5;margin:0 0 18px;text-wrap:pretty">{{ pb.project.whatBroke }}</p>
+                </sc-if>
+                <sc-if value="{{ pb.hasLearned }}" hint-placeholder-val="{{ false }}">
+                  <div style="font-family:'JetBrains Mono',monospace;font-size:10.5px;letter-spacing:1.2px;color:#7A5F52;margin-bottom:6px">WHAT I LEARNED</div>
+                  <p style="font-size:15.5px;line-height:1.7;color:#D9C3B5;margin:0 0 22px;text-wrap:pretty">{{ pb.project.learned }}</p>
+                </sc-if>
+                <div style="display:flex;gap:12px;flex-wrap:wrap">
+                  <sc-if value="{{ pb.hasDemo }}" hint-placeholder-val="{{ false }}">
+                    <a href="{{ pb.project.demo }}" target="_blank" rel="noopener" style="font-family:'JetBrains Mono',monospace;font-size:13px;color:#2A3244;background:#8FA0C7;padding:10px 18px;border-radius:6px;font-weight:600;transition:transform 0.2s ease,box-shadow 0.2s ease;display:inline-block;min-height:38px" style-hover="transform:translateY(-2px) scale(1.03);box-shadow:0 8px 20px -6px rgba(143,160,199,0.5)">Live Demo →</a>
+                  </sc-if>
+                  <a href="{{ pb.project.repo }}" target="_blank" rel="noopener" style="font-family:'JetBrains Mono',monospace;font-size:13px;color:#F2E9DE;border:1px solid rgba(42,50,68,0.15);padding:10px 18px;border-radius:6px;transition:all 0.2s ease;display:inline-block;min-height:38px" style-hover="border-color:#8FA0C7;color:#8FA0C7;transform:translateY(-2px)">GitHub</a>
+                </div>
+              </div>
+            </sc-if>
+          </div>
+        </sc-for>
+
+        <div style="margin-top:48px;text-align:center">
+          <div style="font-family:'JetBrains Mono',monospace;font-size:13px;color:#8FA0C7;letter-spacing:0.5px;margin-bottom:16px">END OF PROJECT CHAIN</div>
+          <button onClick="{{ onReturnMain }}" style="font-family:'JetBrains Mono',monospace;font-size:13px;font-weight:600;color:#2A3244;background:#E2C4A6;border:none;padding:11px 20px;border-radius:6px;cursor:pointer;min-height:38px;transition:transform 0.2s ease" style-hover="transform:translateY(-2px)">← RETURN TO MAIN CHAIN</button>
+        </div>
+      </div>
+    </sc-if>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;miningAnimation&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:true,&quot;tsType&quot;:&quot;boolean&quot;,&quot;section&quot;:&quot;Behavior&quot;},&quot;autoExpandProjects&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:false,&quot;tsType&quot;:&quot;boolean&quot;,&quot;section&quot;:&quot;Behavior&quot;},&quot;pendingPulse&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:true,&quot;tsType&quot;:&quot;boolean&quot;,&quot;section&quot;:&quot;Behavior&quot;},&quot;showTerminal&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:true,&quot;tsType&quot;:&quot;boolean&quot;,&quot;section&quot;:&quot;Behavior&quot;}}">
+class Component extends DCLogic {
+  state = {
+    revealedCount: 0, expanded: {}, copiedKey: null, focusedKey: null,
+    isNarrow: typeof window !== 'undefined' && window.innerWidth < 760,
+    slot: 284910442, tps: 3412, tick: 0, miningAttempt: 0, miningTriggered: false,
+    view: 'main', contactStatus: 'idle', formName: '', formEmail: '', formMessage: '', offchainOpen: {},
+    hoveredKey: null, paletteOpen: false, paletteIndex: 0, networkOpen: false, remining: {}, termInput: '', activeNavKey: 'genesis',
+    termLines: [{ prefix: '~ $', text: 'whoami', color: '#F2E9DE' }, { prefix: '', text: 'siddhi', color: '#A78A7C' }]
+  };
+
+  constructor(props) {
+    super(props);
+    // --- swap in real projects here (titles, why, description, tech, links) ---
+    this.projects = [
+      {
+        title: 'TrustTrail', date: '2025-08-01',
+        why: 'Every Solana lending protocol treats a wallet as an anonymous stranger with zero history, forcing heavy over-collateralization regardless of how responsibly that wallet has actually used DeFi.',
+        description: 'A portable, on-chain credit score for Solana lending \u2014 built from real wallet behavior and real Kamino lending history, not self-reported claims.',
+        tech: ['Anchor', 'Rust', 'TypeScript', 'Express', 'React', 'Vite', 'Helius API'],
+        whatBroke: "Kamino's instruction discriminators aren't embedded in its IDL \u2014 they have to be derived via sha256(\"global:\" + snake_case_name) using the original Rust function name, not the camelCase name the IDL shows.",
+        learned: 'A lack of history should read as \u201cunproven,\u201d never as the best possible score \u2014 repayment and liquidation scoring both needed an explicit thin-file gate so a brand-new wallet is never mistaken for a clean one.',
+        status: 'shipped', chain: 'solana',
+        demo: 'https://trusttrail-nine.vercel.app', repo: 'https://github.com/sbansal05/trusttrail',
+        screenshot: './assets/trusttrail-screenshot.png', screenshotRatio: '1847/1021'
+      },
+      {
+        title: 'SolSync', date: '2025-05-01',
+        why: "A hardcoded priority fee either overpays on quiet slots or misses inclusion entirely on contested ones \u2014 Solana's fee market is local to the accounts a transaction touches, not a global average.",
+        description: 'A TypeScript SDK and CLI that calculates the exact micro-lamport priority fee and Compute Unit limit needed to land a transaction in the next block, without overpaying.',
+        tech: ['TypeScript', 'Solana Web3.js', 'Node.js'],
+        whatBroke: 'Simulating the original transaction before budget instructions were prepended produced an inaccurate CU count \u2014 optimize() now simulates twice, once with a placeholder CU limit to get a structurally complete transaction, then again with the real estimate.',
+        learned: 'Fee chasing during sudden spikes needed EMA smoothing plus 3σ outlier detection - raw percentiles alone overreacted to single contested slots.',
+        status: 'shipped', chain: 'solana',
+        repo: 'https://github.com/sbansal05/solsync',
+        screenshot: './assets/solsync-screenshot.png', screenshotRatio: '1447/398'
+      },
+      {
+        title: 'Token Launchpad', date: '2025-02-01',
+        why: 'Week 6 of a self-directed Solana build sprint \u2014 wanted hands-on reps creating and configuring SPL Token-2022 tokens end to end.',
+        description: 'A decentralized web app for creating and minting custom SPL Token-2022 tokens on Solana, with IPFS storage for token metadata and assets.',
+        tech: ['React', 'Solana Web3.js', 'SPL Token-2022', 'IPFS'],
+        status: 'shipped', chain: 'solana',
+        demo: 'https://token-launchpad-three-livid.vercel.app', repo: 'https://github.com/sbansal05/week-6-token-launchpad',
+        screenshot: './assets/token-launchpad-screenshot.png', screenshotRatio: '1483/823'
+      },
+      {
+        title: 'Web Wallet', date: '2025-01-01',
+        why: 'Wanted to understand wallet mechanics from the ground up \u2014 key generation, signing, balances \u2014 instead of treating a wallet adapter as a black box.',
+        description: 'A web-based multi-chain wallet with private key and address generation, copy and view controls for easy address and private key management, and balance display per blockchain platform.',
+        tech: ['React', 'TypeScript', 'Web3.js', 'Ethers.js'],
+        status: 'shipped', chain: 'solana',
+        demo: 'https://web-wallet-one.vercel.app', repo: 'https://github.com/sbansal05/web-wallet',
+        screenshot: './assets/web-wallet-screenshot.png', screenshotRatio: '1605/1027'
+      },
+      {
+        title: 'finAlytics', date: '2024-12-01',
+        why: 'Wanted a single place to see financial data laid out clearly instead of scattered across spreadsheets.',
+        description: 'A financial analytics dashboard for visualizing and tracking financial data.',
+        tech: ['TypeScript', 'React'],
+        status: 'shipped', chain: 'web',
+        repo: 'https://github.com/sbansal05/finAlytics',
+        demo: 'https://fin-alytics.vercel.app',
+        screenshot: './assets/finalytics-screenshot.png', screenshotRatio: '1917/1078'
+      }
+    ];
+    this.socials = [
+      { label: 'GitHub', url: 'https://github.com/sbansal05' }, { label: 'X / Twitter', url: 'https://x.com/sbansal05' },
+      { label: 'LinkedIn', url: 'https://www.linkedin.com/in/siddhi-bansal-081891246/' }, { label: 'Email', url: 'mailto:sbsiddhi05@gmail.com' }
+    ];
+    this.offchainItems = [
+      { id: 'poetry', num: '01', title: 'POETRY', tagline: "words I couldn't turn into code" },
+      { id: 'sketch', num: '02', title: 'SKETCHBOOK', tagline: 'things I noticed before I knew how to describe them' },
+      { id: 'paint', num: '03', title: 'PAINT', tagline: 'occasionally I trade pixels for paint' }
+    ];
+    this.quickCommands = ['help', 'about', 'stack', 'projects', 'coffee', 'morning', 'art', 'clear'];
+    this.commandHandlers = {
+      help: () => 'commands: about \u00b7 stack \u00b7 projects \u00b7 coffee \u00b7 morning \u00b7 art \u00b7 clear \u00b7 help',
+      whoami: () => 'siddhi',
+      about: () => 'solana dev, learning rust, building things before 11am. still figuring the rest out.',
+      stack: () => 'solana\nrust\ntypescript\nreact\nnext.js\nnode.js',
+      coffee: () => 'coffee status: CONFIRMED \u2713\ndependency level: acceptable\nrecommended action: another cup',
+      morning: () => 'peak hours: 06:00 \u2014 11:00\n2AM productivity: REJECTED\ndeveloper classification: rare',
+      art: () => 'OFF-CHAIN ASSETS FOUND\n\u2192 poetry\n\u2192 sketches\n\u2192 paintings',
+      projects: () => this.projects.map((p, i) => (i + 1) + '. ' + p.title).join('\n'),
+      status: () => 'still shipping'
+    };
+    this.paletteKeys = [
+      { key: 'genesis', label: 'Genesis' },
+      { key: 'journey', label: 'Journey' },
+      { key: 'skills', label: 'Skills' },
+      { key: 'projects-gateway', label: 'Projects' },
+      { key: 'contact', label: 'Contact' }
+    ];
+    this.chain = this.buildChain();
+    this.projectChain = this.buildProjectChain();
+  }
+
+  simpleHash(str) {
+    let h1 = 0xdeadbeef, h2 = 0x41c6ce57, h3 = 0x9e3779b9, h4 = 0x85ebca6b;
+    for (let i = 0; i < str.length; i++) {
+      const c = str.charCodeAt(i);
+      h1 = Math.imul(h1 ^ c, 2654435761); h1 ^= h1 >>> 15;
+      h2 = Math.imul(h2 ^ c, 2246822519); h2 ^= h2 >>> 13;
+      h3 = Math.imul(h3 ^ c, 3266489917); h3 ^= h3 >>> 16;
+      h4 = Math.imul(h4 ^ c, 668265263); h4 ^= h4 >>> 14;
+    }
+    const hex = n => (n >>> 0).toString(16).padStart(8, '0');
+    const h5 = Math.imul(h1 ^ h3, 2654435761), h6 = Math.imul(h2 ^ h4, 2246822519);
+    const h7 = Math.imul(h1 ^ h4, 3266489917), h8 = Math.imul(h2 ^ h3, 668265263);
+    return hex(h1) + hex(h2) + hex(h3) + hex(h4) + hex(h5) + hex(h6) + hex(h7) + hex(h8);
+  }
+
+  buildChain() {
+    const defs = [
+      { key: 'genesis', type: 'genesis', ts: '2023-08-14', mined: '07:12', data: { name: 'siddhi', consensus: 'curiosity' } },
+      { key: 'journey', type: 'journey', ts: '2024-02-03', mined: '08:41', data: { path: 'web -> mern -> ts -> chains -> solana -> rust' } },
+      { key: 'skills', type: 'skills', ts: '2024-06-21', mined: '07:55', data: { learning: 'rust', surviving: 'cors' } },
+      { key: 'projects-gateway', type: 'projects-gateway', ts: '2025-06-01', mined: '08:12', data: { count: 3 } },
+      { key: 'current', type: 'current', ts: '2026-08-01', mined: '07:00', data: { focus: 'rust + solana internals', next: 'internship' } },
+      { key: 'contact', type: 'contact', ts: '2026-09-01', mined: 'pending', data: { pending: true } }
+    ];
+    let prev = '0'.repeat(64);
+    return defs.map((d, i) => {
+      const hash = this.simpleHash(prev + JSON.stringify(d.data) + i);
+      const block = { ...d, index: i, hash, prevHash: prev, nonceSeed: parseInt(hash.slice(0, 8), 16) };
+      prev = hash;
+      return block;
+    });
+  }
+
+  buildProjectChain() {
+    let prev = '0'.repeat(64);
+    return this.projects.map((p, i) => {
+      const key = 'pc-' + i;
+      const hash = this.simpleHash(prev + JSON.stringify(p) + i);
+      const block = { key, index: i, project: p, hash, prevHash: prev };
+      prev = hash;
+      return block;
+    });
+  }
+
+  componentDidMount() {
+    const total = this.chain.length;
+    if (this.props.miningAnimation === false) {
+      this.setState({ revealedCount: total });
+    } else {
+      this._onScroll = () => {
+        if (this._scrollTimer) return;
+        this._scrollTimer = setTimeout(() => { this._scrollTimer = null; this.checkReveal(); this.updateActiveNav(); }, 50);
+      };
+      window.addEventListener('scroll', this._onScroll, { passive: true });
+      window.addEventListener('resize', this._onScroll);
+      setTimeout(() => this.checkReveal(), 200);
+    }
+    this._onResizeWidth = () => { const n = window.innerWidth < 760; if (n !== this.state.isNarrow) this.setState({ isNarrow: n }); };
+    window.addEventListener('resize', this._onResizeWidth);
+    this._interval = setInterval(() => {
+      this.setState(s => ({ tick: s.tick + 1, slot: s.slot + Math.floor(Math.random() * 3) + 1, tps: 2800 + Math.floor(Math.random() * 1400) }));
+    }, 400);
+    this._miningInterval = setInterval(() => {
+      this.setState(s => ({ miningAttempt: s.miningAttempt + 1 }));
+    }, 90);
+    this._onKeydown = (e) => {
+      const isK = e.key && e.key.toLowerCase() === 'k';
+      if ((e.metaKey || e.ctrlKey) && isK) {
+        e.preventDefault();
+        this.setState(s => ({ paletteOpen: !s.paletteOpen, paletteIndex: 0 }));
+        return;
+      }
+      if (this.state.paletteOpen) {
+        if (e.key === 'Escape') { this.setState({ paletteOpen: false }); }
+        else if (e.key === 'ArrowDown') { e.preventDefault(); this.setState(s => ({ paletteIndex: (s.paletteIndex + 1) % this.paletteKeys.length })); }
+        else if (e.key === 'ArrowUp') { e.preventDefault(); this.setState(s => ({ paletteIndex: (s.paletteIndex - 1 + this.paletteKeys.length) % this.paletteKeys.length })); }
+        else if (e.key === 'Enter') { e.preventDefault(); const k = this.paletteKeys[this.state.paletteIndex]; this.setState({ paletteOpen: false }); this.scrollToKey(k.key); }
+      }
+    };
+    window.addEventListener('keydown', this._onKeydown);
+  }
+
+  updateActiveNav() {
+    if (this.state.view !== 'main') {
+      if (this.state.activeNavKey !== 'projects-gateway') this.setState({ activeNavKey: 'projects-gateway' });
+      return;
+    }
+    const keys = this.paletteKeys.map(p => p.key);
+    let current = keys[0];
+    for (const k of keys) {
+      const el = document.querySelector('[data-chain-key="' + k + '"]');
+      if (!el) continue;
+      if (el.getBoundingClientRect().top < 150) current = k; else break;
+    }
+    if (current !== this.state.activeNavKey) this.setState({ activeNavKey: current });
+  }
+
+  navigateTo(key) {
+    if (key === 'projects-gateway') { this.enterProjects(); this.setState({ activeNavKey: key }); return; }
+    if (this.state.view !== 'main') {
+      this.setState({ view: 'main' });
+      setTimeout(() => this.scrollToKey(key), 50);
+    } else {
+      this.scrollToKey(key);
+    }
+    this.setState({ activeNavKey: key });
+  }
+
+  checkReveal() {
+    const total = this.chain.length;
+    const { revealedCount, miningTriggered } = this.state;
+    if (revealedCount >= total || miningTriggered) return;
+    const el = document.querySelector('[data-block-idx="' + revealedCount + '"]');
+    if (!el) { this.setState({ miningTriggered: true }); this.confirmSoon(); return; }
+    const rect = el.getBoundingClientRect();
+    if (rect.top < window.innerHeight * 0.92) {
+      this.setState({ miningTriggered: true });
+      this.confirmSoon();
+    }
+  }
+
+  confirmSoon() {
+    clearTimeout(this._confirmTimeout);
+    this._confirmTimeout = setTimeout(() => {
+      this.setState(s => ({ revealedCount: s.revealedCount + 1, miningTriggered: false }));
+      setTimeout(() => this.checkReveal(), 60);
+    }, 850);
+  }
+
+  componentWillUnmount() {
+    if (this._onScroll) { window.removeEventListener('scroll', this._onScroll); window.removeEventListener('resize', this._onScroll); }
+    if (this._onResizeWidth) window.removeEventListener('resize', this._onResizeWidth);
+    clearTimeout(this._scrollTimer);
+    clearInterval(this._interval);
+    clearInterval(this._miningInterval);
+    clearTimeout(this._copyTimeout);
+    clearTimeout(this._confirmTimeout);
+    if (this._onKeydown) window.removeEventListener('keydown', this._onKeydown);
+    if (this._remineTimers) Object.values(this._remineTimers).forEach(clearTimeout);
+  }
+
+  toggleExpand(key) { this.setState(s => ({ expanded: { ...s.expanded, [key]: !s.expanded[key] } })); }
+
+  enterProjects() { this.setState({ view: 'projects', focusedKey: null }); window.scrollTo({ top: 0, behavior: 'auto' }); }
+
+  returnToMain() {
+    this.setState({ view: 'main' });
+    setTimeout(() => this.scrollToKey('projects-gateway'), 30);
+  }
+
+  toggleFocus(key) { this.setState(s => ({ focusedKey: s.focusedKey === key ? null : key })); }
+
+  toggleOffchain(id, e) { e.stopPropagation(); this.setState(s => ({ offchainOpen: { ...s.offchainOpen, [id]: !s.offchainOpen[id] } })); }
+
+  scrollToKey(key) {
+    let el = document.querySelector('[data-chain-key="' + key + '"]');
+    if (!el) el = document.querySelector('[data-block-idx]');
+    if (!el) return;
+    const rect = el.getBoundingClientRect();
+    window.scrollTo({ top: rect.top + window.scrollY - 60, behavior: 'smooth' });
+  }
+
+  toggleNetwork() { this.setState(s => ({ networkOpen: !s.networkOpen })); }
+
+  reMine(key, e) {
+    e.stopPropagation();
+    if (this.state.remining[key] && this.state.remining[key].active) return;
+    this.setState(s => ({ remining: { ...s.remining, [key]: { active: true, tries: [] } } }));
+    this._remineTimers = this._remineTimers || {};
+    let n = 0;
+    const base = 18470 + Math.floor(Math.random() * 900);
+    const tick = () => {
+      n++;
+      const nonce = base + n;
+      const hash = this.simpleHash(key + '-remine-' + nonce).slice(0, 10);
+      this.setState(s => {
+        const cur = s.remining[key] || { active: true, tries: [] };
+        return { remining: { ...s.remining, [key]: { ...cur, tries: cur.tries.concat([{ nonce, hash }]).slice(-4) } } };
+      });
+      if (n < 5) { this._remineTimers[key] = setTimeout(tick, 220); }
+      else { this.setState(s => ({ remining: { ...s.remining, [key]: { active: false, done: true, nonce, hash } } })); }
+    };
+    tick();
+  }
+
+  runCommandText(raw) {
+    const cmd = raw.trim().toLowerCase();
+    if (!cmd) return;
+    if (cmd === 'clear') { this.setState({ termLines: [] }); return; }
+    const handler = this.commandHandlers[cmd];
+    const out = handler ? handler() : "command not found. try 'help'";
+    const outLines = out.split('\n');
+    this.setState(s => {
+      const next = s.termLines.concat([{ prefix: '~ $', text: raw, color: '#F2E9DE' }], outLines.map(l => ({ prefix: '', text: l, color: '#A78A7C' })));
+      return { termLines: next.slice(-20) };
+    });
+  }
+
+  copyHash(key, hash) {
+    const text = '0x' + hash;
+    if (navigator.clipboard) navigator.clipboard.writeText(text).catch(() => {});
+    this.setState({ copiedKey: key });
+    clearTimeout(this._copyTimeout);
+    this._copyTimeout = setTimeout(() => this.setState({ copiedKey: null }), 1400);
+  }
+
+  setField(field, val) { this.setState({ [field]: val }); }
+
+  onTerminalSubmit(e) { e.preventDefault(); e.stopPropagation(); this.runCommandText(this.state.termInput); this.setState({ termInput: '' }); }
+
+  returnToGenesis() { this.scrollToKey('genesis'); }
+
+  randomBlock() { const pick = this.chain[Math.floor(Math.random() * this.chain.length)]; this.scrollToKey(pick.key); }
+
+  submitContact(e) {
+    e.preventDefault();
+    if (this.state.contactStatus === 'confirming') return;
+    this.setState({ contactStatus: 'confirming' });
+    const body = new FormData();
+    body.append('name', this.state.formName);
+    body.append('email', this.state.formEmail);
+    body.append('message', this.state.formMessage);
+    body.append('_subject', 'New message from portfolio site');
+    fetch('https://formsubmit.co/ajax/sbsiddhi05@gmail.com', { method: 'POST', headers: { Accept: 'application/json' }, body })
+      .then(res => { if (!res.ok) throw new Error('failed'); this.setState({ contactStatus: 'confirmed' }); })
+      .catch(() => this.setState({ contactStatus: 'idle' }));
+  }
+
+  fmtDate(iso) {
+    return new Date(iso).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: '2-digit' }).toUpperCase();
+  }
+
+  renderVals() {
+    const total = this.chain.length;
+    const autoExpand = this.props.autoExpandProjects ?? false;
+    const pendingPulse = this.props.pendingPulse ?? true;
+    const sectionLabels = {
+      genesis: 'GENESIS', journey: 'THE CHAIN SO FAR', skills: 'STATE.SKILLS',
+      'projects-gateway': 'PROJECTS', offchain: 'OFF-CHAIN', current: 'CURRENT STATE', contact: 'CONTACT'
+    };
+    const blocks = this.chain.map((b, i) => {
+      const focused = this.state.focusedKey === b.key;
+      const isConfirmed = i < this.state.revealedCount;
+      const isMining = i === this.state.revealedCount && this.state.miningTriggered;
+      const pendingBlock = i > this.state.revealedCount || (i === this.state.revealedCount && !this.state.miningTriggered);
+      const expanded = this.state.expanded[b.key] ?? false;
+      const justCopied = this.state.copiedKey === b.key;
+      const nonce = ((b.nonceSeed ^ (this.state.tick * 2654435761)) >>> 0) % 1000000000;
+      const isLast = i === total - 1;
+      const attemptCount = isMining ? this.state.miningAttempt : 0;
+      const attemptHash = isMining ? this.simpleHash(b.key + '-attempt-' + this.state.miningAttempt).slice(0, 12) : '';
+      const prevKey = i > 0 ? this.chain[i - 1].key : null;
+      const connectorActive = this.state.hoveredKey === b.key || (prevKey !== null && this.state.hoveredKey === prevKey);
+      const rm = this.state.remining[b.key];
+      return {
+        ...b,
+        attemptCount, attemptHash,
+        sectionLabel: sectionLabels[b.type],
+        blockLabel: 'BLOCK #' + String(i).padStart(2, '0'),
+        showConnector: i > 0,
+        showCard: isConfirmed || isMining,
+        pendingBlock, isMining, isConfirmed,
+        isGenesis: b.type === 'genesis', isJourney: b.type === 'journey', isSkills: b.type === 'skills',
+        isGateway: b.type === 'projects-gateway', isOffchain: b.type === 'offchain', isCurrent: b.type === 'current', isContact: b.type === 'contact',
+        showChevron: true,
+        offchainCards: b.type === 'offchain' ? this.offchainItems.map(it => ({ ...it, open: !!this.state.offchainOpen[it.id], closed: !this.state.offchainOpen[it.id], onToggle: e => this.toggleOffchain(it.id, e) })) : null,
+        expanded, collapsed: !expanded,
+        chevronTransform: expanded ? 'rotate(90deg)' : 'rotate(0deg)',
+        cardOpacity: isMining ? 0.5 : 1,
+        cardTransform: focused ? (this.state.isNarrow ? 'translateY(-4px) scale(1.01)' : 'translateY(-10px) scale(1.06)') : (isMining ? 'translateY(16px) scale(0.97)' : 'translateY(0) scale(1)'),
+        cardShadow: focused ? '0 44px 90px -26px rgba(143,160,199,0.55), 0 16px 40px -14px rgba(0,0,0,0.6)' : (isMining ? '0 6px 16px -6px rgba(0,0,0,0.3)' : '0 18px 44px -22px rgba(86,53,45,0.35), 0 6px 18px -8px rgba(0,0,0,0.5)'),
+        cardBorder: focused ? '1px solid #8FA0C7' : '1px solid rgba(86,53,45,0.4)',
+        cardHeight: 'auto',
+        cardZIndex: focused ? 60 : 'auto',
+        connectorOpacity: connectorActive ? 1 : 0.5,
+        connectorGlow: connectorActive ? '0 0 20px 6px rgba(143,160,199,0.95)' : '0 0 10px 2px rgba(143,160,199,0.8)',
+        onHoverIn: () => this.setState({ hoveredKey: b.key }),
+        onHoverOut: () => this.setState(s => s.hoveredKey === b.key ? { hoveredKey: null } : null),
+        reMineActive: !!(rm && rm.active),
+        reMineIdle: !(rm && rm.active),
+        reMineDone: !!(rm && rm.done),
+        reMineTries: rm ? rm.tries : [],
+        inspectorNonce: rm && rm.done ? String(rm.nonce) : String(nonce).padStart(9, '0'),
+        inspectorHash: rm && rm.done ? ('0x' + rm.hash + '\u2026') : ('0x' + b.hash.slice(0, 10) + '\u2026'),
+        onReMine: e => this.reMine(b.key, e),
+        justCopied, copyIdle: !justCopied,
+        onCopy: e => { e.stopPropagation(); this.copyHash(b.key, b.hash); },
+        onToggle: e => { e.stopPropagation(); this.toggleExpand(b.key); },
+        onFormClick: e => e.stopPropagation(),
+        onFocusToggle: () => this.toggleFocus(b.key),
+        showPendingBadge: isLast && pendingPulse && isConfirmed,
+        hashShort: '0x' + b.hash.slice(0, 4) + '\u2026' + b.hash.slice(-4),
+        hashFull: '0x' + b.hash,
+        prevHashShort: i === 0 ? 'GENESIS' : '0x' + b.prevHash.slice(0, 4) + '\u2026' + b.prevHash.slice(-4),
+        confirmations: isConfirmed ? (total - i - 1) : 0,
+        nonceDisplay: String(nonce).padStart(9, '0'),
+        minedAt: b.mined === 'pending' ? 'pending' : (b.type === 'genesis' ? b.mined + ' (of course)' : b.mined),
+        dateLabel: this.fmtDate(b.ts),
+        socialsList: b.type === 'genesis' ? this.socials : null
+      };
+    });
+    const showLiveMining = this.state.revealedCount >= total;
+    const liveAttemptHash = showLiveMining ? this.simpleHash('next-block-' + total + '-' + this.state.miningAttempt).slice(0, 14) : '';
+    const projectBlocks = this.projectChain.map((b, i) => {
+      const expanded = this.state.expanded[b.key] ?? false;
+      const justCopied = this.state.copiedKey === b.key;
+      return {
+        ...b,
+        hasDemo: !!(b.project.demo && b.project.demo !== '#'),
+        hasWhatBroke: !!b.project.whatBroke,
+        hasLearned: !!b.project.learned,
+        blockLabel: 'BLOCK #' + String(i).padStart(2, '0'),
+        projectNumber: String(i + 1).padStart(2, '0'),
+        showConnector: i > 0,
+        expanded, collapsed: !expanded,
+        hashShort: '0x' + b.hash.slice(0, 4) + '\u2026' + b.hash.slice(-4),
+        onToggle: e => { e.stopPropagation(); this.toggleExpand(b.key); },
+        onCopy: e => { e.stopPropagation(); this.copyHash(b.key, b.hash); },
+        justCopied, copyIdle: !justCopied
+      };
+    });
+    return {
+      mainView: this.state.view === 'main', projectsView: this.state.view === 'projects',
+      onEnterProjects: () => this.enterProjects(), onReturnMain: () => this.returnToMain(),
+      onEnterProjectsClick: e => { e.stopPropagation(); this.enterProjects(); },
+      projectBlocks,
+      navItems: this.paletteKeys.map(p => {
+        const active = this.state.activeNavKey === p.key;
+        return {
+          label: p.label,
+          color: active ? '#2A3244' : '#D9C3B5',
+          bg: active ? '#8FA0C7' : 'transparent',
+          onClick: e => { e.stopPropagation(); this.navigateTo(p.key); }
+        };
+      }),
+      overlayVisible: !!this.state.focusedKey,
+      onOverlayClick: () => this.setState({ focusedKey: null }),
+      showLiveMining, liveBlockLabel: String(total).padStart(2, '0'), liveAttemptCount: this.state.miningAttempt, liveAttemptHash,
+      blocks, totalBlocks: total, confirmedCount: this.state.revealedCount,
+      slotLabel: this.state.slot.toLocaleString(), tpsLabel: this.state.tps.toLocaleString(),
+      terminalOn: this.props.showTerminal ?? true,
+      termLines: this.state.termLines,
+      termInput: this.state.termInput,
+      onTermInputChange: e => this.setField('termInput', e.target.value),
+      onTerminalSubmit: e => this.onTerminalSubmit(e),
+      termCommands: this.quickCommands.map(name => ({ name, run: e => { e.stopPropagation(); this.runCommandText(name); } })),
+      networkOpen: this.state.networkOpen,
+      onToggleNetwork: e => { e.stopPropagation(); this.toggleNetwork(); },
+      paletteOpen: this.state.paletteOpen,
+      onPaletteClose: () => this.setState({ paletteOpen: false }),
+      stopPropClick: e => e.stopPropagation(),
+      paletteItems: this.paletteKeys.map((p, idx) => ({
+        label: p.label,
+        color: idx === this.state.paletteIndex ? '#F2E9DE' : '#D9C3B5',
+        bg: idx === this.state.paletteIndex ? 'rgba(143,160,199,0.14)' : 'transparent',
+        onSelect: () => { this.setState({ paletteOpen: false }); if (p.key === 'projects-gateway') this.enterProjects(); else this.scrollToKey(p.key); }
+      })),
+      onReturnGenesis: () => this.returnToGenesis(),
+      onRandomBlock: () => this.randomBlock(),
+      formName: this.state.formName, formEmail: this.state.formEmail, formMessage: this.state.formMessage,
+      onNameChange: e => this.setField('formName', e.target.value),
+      onEmailChange: e => this.setField('formEmail', e.target.value),
+      onMessageChange: e => this.setField('formMessage', e.target.value),
+      onSubmitContact: e => this.submitContact(e),
+      formStatusIdle: this.state.contactStatus === 'idle',
+      formStatusConfirming: this.state.contactStatus === 'confirming',
+      formStatusConfirmed: this.state.contactStatus === 'confirmed'
+    };
+  }
+}
+</script>
+</body>
+</html>
