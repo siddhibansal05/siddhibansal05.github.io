@@ -392,7 +392,7 @@ html{scroll-behavior:smooth}
       <div style="animation:fadeInOverlay 0.3s ease-out">
         <button onClick="{{ onReturnMain }}" style="font-family:'JetBrains Mono',monospace;font-size:13px;color:#8FA0C7;background:transparent;border:none;cursor:pointer;padding:8px 0;margin-bottom:26px;display:inline-flex;align-items:center;gap:6px;min-height:36px;transition:color 0.2s ease" style-hover="color:#F2E9DE">← MAIN CHAIN</button>
         <h1 style="font-family:'JetBrains Mono',monospace;font-weight:700;font-size:clamp(26px,5vw,38px);margin:0 0 8px;color:#E2C4A6;letter-spacing:-0.5px">PROJECTS CHAIN</h1>
-        <div style="font-family:'JetBrains Mono',monospace;font-size:13px;color:#7A5F52;margin-bottom:44px">05 blocks · 05 artifacts</div>
+        <div style="font-family:'JetBrains Mono',monospace;font-size:13px;color:#7A5F52;margin-bottom:44px">06 blocks · 06 artifacts</div>
 
         <sc-for list="{{ projectBlocks }}" as="pb" hint-placeholder-count="3">
           <sc-if value="{{ pb.showConnector }}" hint-placeholder-val="{{ false }}">
@@ -486,14 +486,25 @@ class Component extends DCLogic {
     this.projects = [
       {
         title: 'TrustTrail', date: '2025-08-01',
-        why: 'Every Solana lending protocol treats a wallet as an anonymous stranger with zero history, forcing heavy over-collateralization regardless of how responsibly that wallet has actually used DeFi.',
-        description: 'A portable, on-chain credit score for Solana lending \u2014 built from real wallet behavior and real Kamino lending history, not self-reported claims.',
-        tech: ['Anchor', 'Rust', 'TypeScript', 'Express', 'React', 'Vite', 'Helius API'],
-        whatBroke: "Kamino's instruction discriminators aren't embedded in its IDL \u2014 they have to be derived via sha256(\"global:\" + snake_case_name) using the original Rust function name, not the camelCase name the IDL shows.",
-        learned: 'A lack of history should read as \u201cunproven,\u201d never as the best possible score \u2014 repayment and liquidation scoring both needed an explicit thin-file gate so a brand-new wallet is never mistaken for a clean one.',
+        why: 'DeFi lenders treat every wallet as a stranger. A wallet that has repaid on time for a year posts the same collateral and pays the same rate as one created yesterday, even though that history is already public on Solana.',
+        description: 'An on-chain repayment record for Solana wallets, plus a USDC lending pool that prices each loan from it. Repay on time and you post less collateral and pay a lower rate, and any other lender can read the same record in one RPC call.',
+        tech: ['Anchor', 'Rust', 'Solana Attestation Service', 'Pyth', 'LiteSVM', 'TypeScript', 'Express', 'Postgres', 'React', 'Helius', 'Dune'],
+        whatBroke: 'Wash loans could farm a score. Using my own Dune analysis of Solana lending, I made loans of $100 or less carry no weight, gave a loan full weight only after 24 hours, and scaled weight with the log of the principal.',
+        learned: 'A record only matters if others can use it. A separate demo lender (Northwind) reads and decodes the score account in the browser with no TrustTrail backend, which proves the record is portable.',
         status: 'shipped', chain: 'solana',
-        demo: 'https://trusttrail-nine.vercel.app', repo: 'https://github.com/sbansal05/trusttrail',
-        screenshot: './assets/trusttrail-screenshot.png', screenshotRatio: '1847/1021'
+        demo: 'https://trusttrail-ten.vercel.app', repo: 'https://github.com/sbansal05/trusttrail',
+        screenshot: './assets/trusttrail-screenshot.png', screenshotRatio: '1843/700'
+      },
+      {
+        title: 'Solana Token Transfer Indexer', date: '2026-10-01',
+        why: "TrustTrail rebuilds wallet history by polling Helius on demand. That doesn't scale, and it only learns about a transfer the next time it asks. This is the data layer it actually needs.",
+        description: 'A real-time SPL Token transfer feed built on Yellowstone gRPC. It holds a standing connection to a validator\'s Geyser stream, decodes Transfer and TransferChecked instructions, and writes them to Postgres. Kill it mid-stream and it resumes with zero gaps and zero duplicate rows.',
+        tech: ['Rust', 'Yellowstone gRPC', 'Geyser', 'Shipstern', 'Postgres', 'Agave', 'TypeScript'],
+        whatBroke: "Yellowstone's reconnection policy only covers a drop while the process is still running. A crash or redeploy left nothing to reconnect from, so I persist last_committed_slot to Postgres in the same transaction as every write and resume from it on startup.",
+        learned: 'Idempotency is what makes replay safe. INSERT ... ON CONFLICT DO NOTHING on (slot, signature, instruction_index) turns a transfer seen twice into a harmless no-op instead of a duplicate row or a crash.',
+        status: 'shipped', chain: 'solana',
+        repo: 'https://github.com/sbansal05/indexer',
+        screenshot: './assets/indexer-screenshot.png', screenshotRatio: '972/737'
       },
       {
         title: 'SolSync', date: '2025-05-01',
